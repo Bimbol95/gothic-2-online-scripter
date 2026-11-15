@@ -1,0 +1,35 @@
+{
+  "refreshed_at_utc": "2026-11-14T14:10:42.041369+00:00",
+  "files": {
+    "versions.json": {
+      "url": "https://gothic-online.gitlab.io/platform/docs/versions.json",
+      "bytes": 295,
+      "sha256": "9dec7ad7a0f01d216c05e00441a0e790bd7437ce4721aefac619aa5d82707d1f"
+    },
+    "0.3.9.json": {
+      "url": "https://gothic-online.gitlab.io/platform/docs/0.3.9/api.json",
+      "bytes": 1927722,
+      "sha256": "464ad53b8ec82fcb6d24a1b1e1462414b223b580c4025e70da908dad5856e06f"
+    },
+    "0.3.8.json": {
+      "url": "https://gothic-online.gitlab.io/platform/docs/0.3.8/api.json",
+      "bytes": 1863974,
+      "sha256": "99a477cf877fb523902c8deacd034199b4be9e61116901ecca9070fa51bae35a"
+    },
+    "0.3.7.json": {
+      "url": "https://gothic-online.gitlab.io/platform/docs/0.3.7/api.json",
+      "bytes": 1497485,
+      "sha256": "dd7ee451fbdfb322967e78d1cbc00a8db844be28ba16076f474c0568a3ebf5fb"
+    },
+    "0.3.6.json": {
+      "url": "https://gothic-online.gitlab.io/platform/docs/0.3.6/api.json",
+      "bytes": 1492279,
+      "sha256": "7256e18a12bd0e2700ea169364d3892f853f0c0c96caf20decb1bd904f9ff012"
+    },
+    "../cef/search_index.json": {
+      "url": "https://gothic-online.gitlab.io/modules/cef/search/search_index.json",
+      "bytes": 37979,
+      "sha256": "d477693d0179f3dbfdb903b4ba9ace9effe2c8be43ba64540ea26678c6fb92fe"
+    }
+  }
+}
