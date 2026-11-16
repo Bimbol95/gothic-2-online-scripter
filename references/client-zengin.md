@@ -156,6 +156,20 @@ Most base position/size methods use Gothic virtual screen coordinates. `*Px` var
 
 Native UI is appropriate for lightweight elements updated every frame, especially projected nameplates/markers. Prefer CEF for complex layout, forms, and document-style UI.
 
+Construct owned labels, sprites, and other UI elements eagerly in the UI class constructor. Keep input handling in the owning state/service and presentation/layout in a separate UI class when those responsibilities grow. Do not create UI on its first use unless the user explicitly requests lazy loading.
+
+Always handle client `onChangeResolution` for native UI. The included 0.3.9 API defines this event without parameters. In the feature-local `handlers.nut`, delegate to the existing UI owner's layout method:
+
+```js
+local function change_resolution_handler() {
+    core.ui.resize()
+}
+
+addEventHandler("onChangeResolution", change_resolution_handler)
+```
+
+Here `core.ui` represents the already constructed project UI. Implement its `resize()` method to recompute the feature's positions, dimensions, alignment, and pixel/virtual coordinate conversions from the current resolution. Keep the same UI objects and current display state. Apply the equivalent rule to CEF as described in `references/cef.md`.
+
 
 ## Working safely with exposed engine classes
 

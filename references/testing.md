@@ -17,7 +17,10 @@ For every change:
 9. Verify every Gothic/G2O runtime text file decodes strictly with the selected regional Windows code page, contains no UTF-8 BOM, and was not silently rewritten as UTF-8. Treat unrepresentable characters as errors rather than replacing them.
 10. Check new and modified code for `snake_case` local variables, parameters, and class attributes; keep only class names in `PascalCase` and class methods in `lowerCamelCase`.
 11. Review method names for redundant receiver context and clipped words: prefer `player_service.respawn` over `player_service.playerRespawn`, and `manager` over `mgr`. Preserve established acronyms in uppercase in class/method names.
-12. Run project-provided formatters, linters, builds, or tests only when their documented commands are present and preserve the required Windows encoding.
+12. Check eager construction and explicit lifecycle initialization; lazy loading is allowed only when requested by the user. Keep global managers and state machines under `core` and verify services do not mirror state owned elsewhere.
+13. Check documented settings, named file-local values for non-obvious literals, appropriately scoped utilities for repeated helpers, and responsibility splits for large classes.
+14. Confirm native UI and CEF have a feature-local `onChangeResolution` handler that updates the existing UI layout.
+15. Run project-provided formatters, linters, builds, or tests only when their documented commands are present and preserve the required Windows encoding.
 
 Static inspection does not prove that a Squirrel script loads in G2O.
 
@@ -38,6 +41,8 @@ Do not edit user-supplied `data.xml`, `mds.xml`, or `.vdf` files to make startup
 ## Game and CEF validation
 
 Launch or control the game client only when a runnable installation and an explicit automation/control path are available. Validate the smallest observable scenario that exercises the feature. For CEF, distinguish a successful web build from successful rendering and bridging inside the game.
+
+For UI features, change the game resolution and check layout, bounds, alignment, and input targeting for native elements and CEF. Confirm resize handling updates existing elements without reconstructing the UI or losing its current state.
 
 If interactive or visual behavior cannot be automated, provide a short manual test scenario with expected observations derived from the requirement. Label it as unexecuted.
 

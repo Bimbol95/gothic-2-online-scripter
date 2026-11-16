@@ -21,15 +21,20 @@ Store project configuration in `settings.nut` and expose one shared root table n
 
 ```js
 settings <- {
+    // Enables extra diagnostics during development.
     debug = false,
     lobby = {
+        // Minimum number of players required to start a round.
         minimum_players = 2,
+        // Duration of an active round, in seconds.
         round_time_seconds = 300,
     },
 }
 ```
 
 Use `snake_case` for every settings key, including nested keys.
+
+Document every generated setting inline so someone reading only `settings.nut` can understand its purpose. State units for durations, distances, scales, and sizes; explain valid ranges or special values when they are established by the requirement or API. Never invent constraints to fill a comment.
 
 Good:
 
@@ -58,9 +63,13 @@ Use G2O's shared value classes instead of ad-hoc tables when they represent the 
 
 ```js
 settings <- {
+    // Display color used for the team.
     team_color = Color(62, 139, 255),
+    // Spawn location in world coordinates.
     spawn_position = Vec3(100.0, 200.0, 300.0),
+    // Horizontal and vertical map scale factors.
     map_scale = Vec2(1.0, 1.0),
+    // UI window dimensions in pixels.
     window_size = Vec2i(1280, 720),
 }
 ```
@@ -207,6 +216,8 @@ Anonymous functions remain appropriate as short callbacks passed directly to API
 
 Use a class when an object owns state or behavior. For a singleton, define a local class and assign one instance to a global `snake_case` variable.
 
+Prefer local classes and functions whenever cross-file access is unnecessary. Shared managers, services, and state machines belong under `core`; the standalone singleton below illustrates construction syntax, not a reason to create a second global service registry. See `references/project-architecture.md` for the root composition pattern.
+
 Good:
 
 ```js
@@ -248,6 +259,31 @@ TDMService <- {
 
 Initialize mutable instance state such as arrays and tables in the constructor rather than sharing a mutable class-level default.
 
+## Eager construction and focused classes
+
+Create owned objects in the constructor when their prerequisites are available. Do not defer creation to a getter, first input event, `show`, or `onEnter` just to avoid constructing the object. Lazy loading requires an explicit user request.
+
+For UI, construct the elements immediately in the UI class constructor and show, hide, update, or resize those same elements later. If an object's runtime prerequisites become available only at `onInit`, create the object explicitly in that handler using a local variable; let its owner retain it when it must survive startup. UI construction may occur before `onInit` when supported by its APIs. This UI exception permits earlier construction, not implicit first-use construction.
+
+Split a large class when it mixes responsibilities. For example:
+
+- `ClassSelector`: state or service controlling selection and keyboard input; it may own the simple camera adjustment.
+- `ClassSelectorUI`: rendering and layout only, without keyboard handling or selection rules.
+
+The selector creates its UI eagerly in its constructor and passes current data to it. A UI class can keep references required for rendering; it must not maintain a second authoritative selection state. Prefer `local class` for helpers used only in the owning file.
+
+## Reuse and named values
+
+Extract genuinely repeated functions to a suitable `utils.nut` rather than recreating them in each feature. Keep feature-specific helpers in that feature's utilities and shared helpers in shared utilities only when both execution sides can use them. Load utilities before consumers. Do not turn a one-off operation into a generic utility without a concrete need.
+
+Name repeated or non-obvious literal values near the top of their file using descriptive local variables. Keep user-adjustable values in documented `settings` instead. Avoid opaque temporary variables that merely rename an unexplained number.
+
+```js
+local selection_delay_ms = 200
+
+// Use selection_delay_ms wherever this file needs the selection delay.
+```
+
 ## Handler placement and sections
 
 Keep event and packet handlers in `handlers.nut` inside the smallest feature directory they belong to:
@@ -266,9 +302,9 @@ Use section separators to keep entry points scannable:
 ////////////////////////////////////////////
 
 local function player_disconnect_handler(player_id, reason) {
-    local player = server.players.get(player_id)
+    local player = core.players.get(player_id)
     if (player && player.inState(PlayerState.LOBBY)) {
-        server.lobby.service.leave(player)
+        core.lobby.service.leave(player)
     }
 }
 
@@ -279,9 +315,9 @@ addEventHandler("onPlayerDisconnect", player_disconnect_handler)
 ////////////////////////////////////////////
 
 LobbyLeaveMessage.bind(function (player_id, message) {
-    local player = server.players.get(player_id)
+    local player = core.players.get(player_id)
     if (player) {
-        server.flow.lobbyLeave(player)
+        core.flow.lobbyLeave(player)
     }
 })
 ```
@@ -289,6 +325,8 @@ LobbyLeaveMessage.bind(function (player_id, message) {
 Place every `addEventHandler` immediately below the local function it registers. Do not collect registrations at the end of the file.
 
 Handlers should be thin entry points: resolve the relevant player or object, reject invalid context, and delegate domain work to a service or state object.
+
+The root startup handler may live with the local `Core` class in `main.nut`. Other feature event/packet handlers remain in their feature-local `handlers.nut`. Follow `references/project-architecture.md` for orchestration and single ownership of state.
 
 ## Networking rule
 

@@ -31,16 +31,23 @@ Verify exact argument conversion and table conversion policy in the documentatio
 Keep direct browser operations behind one client-side class:
 
 ```js
-class CefUi {
+local virtual_extent = 8192
+
+class CEFUI {
     browser = null
 
     constructor(url, fps) {
-        this.browser = Browser(0, 0, 8192, 8192, url)
+        this.browser = Browser(0, 0, virtual_extent, virtual_extent, url)
         this.browser.visible = false
         this.browser.fps = fps
         this.browser.muted = false
         this.browser.setTableToMap(false)
         this.browser.top()
+    }
+
+    function resize() {
+        this.browser.setPosition(0, 0)
+        this.browser.setSize(virtual_extent, virtual_extent)
     }
 
     function setVisible(visible) {
@@ -68,6 +75,22 @@ class CefUi {
 ```
 
 Before using this example, verify `Browser` members and `setCursorVisible` against the relevant documentation and target G2O API snapshot.
+
+## Construction and resolution changes
+
+Create the browser eagerly in the UI constructor. If its prerequisites require `onInit`, construct the UI explicitly there. Do not create it on the first `show`, input event, or bridge call. UI may be constructed earlier when the documented API allows it.
+
+Handle client `onChangeResolution` for CEF as well as native UI. In the included G2O 0.3.9 API this event has no parameters. Put the handler in the relevant client feature's `handlers.nut`; access the UI through its owner:
+
+```js
+local function change_resolution_handler() {
+    core.ui.resize()
+}
+
+addEventHandler("onChangeResolution", change_resolution_handler)
+```
+
+This example assumes `core.ui` is the initialized wrapper above. Set up the owner at an explicit startup point before its handlers can consume it. Adapt `resize()` to the actual viewport/layout, recompute pixel-based dimensions when used, and ensure the web document responds to the new viewport. Keep existing browser instances; do not recreate them as a resize mechanism.
 
 ## Routing JavaScript actions to active BStates
 

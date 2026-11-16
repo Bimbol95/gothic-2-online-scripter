@@ -32,11 +32,13 @@ The BPackets binding stops loading when `BPacketMessage` is absent. The replicat
 Subclass `BState` and override `onEnter` and `onExit`:
 
 ```js
+local update_interval_ms = 200
+
 class LobbyState extends BState {
     _timer = -1
 
     function onEnter() {
-        this._timer = setTimer(this.onUpdate.bindenv(this), 200, 0)
+        this._timer = setTimer(this.onUpdate.bindenv(this), update_interval_ms, 0)
     }
 
     function onExit() {

@@ -41,6 +41,78 @@ Write Squirrel scripts, XML manifests, and other text files consumed directly by
 
 A shared definition can describe a value used on both sides; it does not permit a client-only or server-only G2O call to execute on the wrong side.
 
+## Logical flow and state ownership
+
+Use a direct, readable call flow:
+
+```text
+Event or packet handler
+  -> Orchestrator (for example GameFlow)
+    -> State
+      -> Service
+        -> Helper classes
+```
+
+The orchestrator decides where execution goes next and coordinates transitions between domains. This is especially useful on the server when multiple sessions or domains are active rather than one global active state. A state owns the current domain/session context. Services implement cohesive operations against that state; they must not keep independent copies of it. Pass state or references to its owner instead of mirroring mutable values in services.
+
+Omit an orchestrator or state layer when a handler can clearly delegate directly to a service. Split large state logic across services and local helper classes while preserving one owner of mutable state. Keep the execution path explicit; avoid chains of callbacks or indirection that obscure what runs and when.
+
+## Root composition in `main.nut`
+
+Keep globally accessible managers, services, and state machines under one global object named `core`. Client and server may each have their own `core` in their separate VMs. Define its class locally in that side's `main.nut` and compose dependencies eagerly.
+
+This server composition example assumes its domain classes have already loaded:
+
+```js
+local class Core {
+    lobby = null
+    match = null
+    browser = null
+    flow = null
+    players = null
+
+    constructor(max_slots) {
+        this.lobby = this.createLobbyState()
+        this.match = this.createMatchState()
+        this.browser = {
+            service = BrowserService(this.lobby.manager, this.match.manager)
+        }
+        this.flow = GameFlow(this.browser.service, this.lobby.service, this.match.service)
+        this.players = PlayerManager(max_slots)
+    }
+
+    function createLobbyState() {
+        local manager = ::LobbyManager()
+        local service = ::LobbyService(manager)
+
+        return {manager = manager, service = service}
+    }
+
+    function createMatchState() {
+        local manager = ::MatchManager()
+        local service = ::MatchService(manager)
+
+        return {manager = manager, service = service}
+    }
+}
+
+///////////////////////////////////////////
+/// Events
+///////////////////////////////////////////
+
+local function init_handler() {
+    core <- Core(getMaxSlots())
+}
+
+addEventHandler("onInit", init_handler)
+```
+
+Treat the domain class names as project definitions, not built-in G2O APIs. Adjust dependency order to the actual constructor requirements. Attach any global state machine as a member of `core` as well. Access managers through `core.players` or `core.lobby.manager`, rather than adding parallel global `server`/`client` registries.
+
+For a feature that needs initialization only at `onInit` and does not need global access, construct its object in a local variable in that handler. Ensure a real owner or registered callback retains it if it must outlive the handler. Prefer local functions and helper classes; expose only interfaces needed across files.
+
+Do not use lazy creation. If runtime prerequisites require delayed startup, construct the complete object at the appropriate explicit lifecycle event. UI may be constructed earlier when its APIs allow it. See `references/runtime-lifecycle.md` for event ordering.
+
 ## Player and NPC API naming
 
 Many stat, visual, equipment, animation, and state functions retain `setPlayer*`/`getPlayer*` names from the period before full NPC support. Their name does not necessarily restrict them to connected players: many resolve an ID through the common NPC registry and can operate on a player or a remote NPC. Client functions may also support negative-ID local NPCs, subject to their own restrictions.
@@ -117,6 +189,8 @@ These are composition examples, not mandatory file lists. Do not emit an import 
 
 The project settings file is always `settings.nut` and defines `settings <- { ... }`. Library-owned configuration files keep the filenames required by their libraries.
 
+Document every generated setting inline with its purpose and units. Load `settings.nut` before any constructor or definition that reads it.
+
 ## Internal organization choices
 
 Use a simple state-oriented structure for a compact round-based project:
@@ -153,6 +227,8 @@ Keep event and packet entry points in the feature-local `handlers.nut`. Load it 
 Do not force this five-file split onto a feature that has only one or two operations.
 
 Use complete architectural names in files and identifiers: `manager`, `service`, `handlers`, and `player_state`, never clipped forms such as `mgr` or `svc`.
+
+Extract repeated helper functions into an appropriately scoped `utils.nut`. Split oversized classes into focused classes, using `local class` when the helper is private to a file. For a class selector, keep input/selection and simple camera changes in `ClassSelector`, and presentation/layout in `ClassSelectorUI`.
 
 ## Fixed exclusions
 

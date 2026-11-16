@@ -53,6 +53,11 @@ Read `references/source-policy.md` before designing or editing code. Treat it as
 - Do not create, edit, or package `.vdf` files; the user supplies them.
 - Encode text files consumed directly by Gothic/G2O with the exact regional `Windows-12xx` code page. Never save those files as UTF-8 or UTF-8 with BOM. If the code page is not established by the user or project, ask instead of guessing.
 - Store project configuration in `settings.nut` as `settings <- { ... }`; use `snake_case` for settings keys.
+- Document every generated setting with its purpose, units, and relevant constraints.
+- Construct dependencies eagerly in constructors. Use lazy loading only when the user explicitly requests it; when runtime timing requires `onInit`, construct the object there instead. See `references/project-architecture.md` for ownership and startup patterns.
+- Keep shared managers and state machines under one side-local global `core` object, composed in `main.nut`. Use a clear event -> orchestrator -> state -> service -> helper flow, omitting unnecessary layers. Services must not duplicate state owned elsewhere.
+- Prefer local functions/classes, extract cohesive helper classes from oversized classes, and move genuinely repeated helpers into appropriately scoped `utils.nut` files. Name repeated or non-obvious literals with file-local variables near the top of the file.
+- Handle `onChangeResolution` for both native UI and CEF, updating the existing UI through its owner.
 - Use `snake_case` for local variables, function parameters, and class attributes. Keep class methods `lowerCamelCase` and classes `PascalCase`.
 - Prefer concise, contextual function and method names: do not repeat the receiver's responsibility (`player_service.respawn`, not `player_service.playerRespawn`). Never shorten words into unclear forms such as `mgr`; write `manager`. Preserve established acronyms in uppercase inside class and method names, for example `TDMService` and `findNPC`.
 - Use shared `Color`, `Vec3`, `Vec2`, and `Vec2i` values instead of ad-hoc tables when those types represent the value.
